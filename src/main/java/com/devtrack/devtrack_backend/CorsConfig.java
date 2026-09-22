@@ -19,7 +19,7 @@ public class CorsConfig {
 
                 registry.addMapping("/api/**")
                         .allowedOrigins(
-                                "https://dev-track-front-end.vercel.app/"
+                                "https://dev-track-front-end.vercel.app"
                         )
                         .allowedMethods("*");
             }
