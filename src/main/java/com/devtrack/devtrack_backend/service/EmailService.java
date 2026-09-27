@@ -13,26 +13,27 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void sendIssueAssignedEmail(
-            String email,
-            String issueKey,
-            String title) {
+    public void sendIssueCreatedEmail(String to, String issueKey, String title) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
 
-        SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject("New Issue Created: " + issueKey);
+            message.setText(
+                    "A new issue has been created.\n\n" +
+                            "Issue: " + issueKey + "\n" +
+                            "Title: " + title
+            );
 
-        message.setTo(email);
-        message.setSubject(
-                "You have been assigned " + issueKey
-        );
+            System.out.println("Attempting to send email to: " + to);
 
-        message.setText(
-                "Hello,\n\n" +
-                        "You have been assigned a new issue.\n\n" +
-                        "Issue: " + issueKey + "\n" +
-                        "Title: " + title + "\n\n" +
-                        "Please log in to DevTrack to view the issue."
-        );
+            mailSender.send(message);
 
-        mailSender.send(message);
+            System.out.println("Email sent successfully to: " + to);
+
+        } catch (Exception e) {
+            System.err.println("FAILED TO SEND EMAIL TO: " + to);
+            e.printStackTrace();
+        }
     }
 }
