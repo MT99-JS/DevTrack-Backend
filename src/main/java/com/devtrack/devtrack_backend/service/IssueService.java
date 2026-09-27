@@ -2,6 +2,8 @@ package com.devtrack.devtrack_backend.service;
 
 import com.devtrack.devtrack_backend.dto.IssueRequest;
 import com.devtrack.devtrack_backend.dto.IssueResponse;
+import com.devtrack.devtrack_backend.dto.kafka.IssueCreatedEvent;
+import com.devtrack.devtrack_backend.dto.kafka.IssueEventProducer;
 import com.devtrack.devtrack_backend.entity.*;
 import com.devtrack.devtrack_backend.exception.IssueNotFoundException;
 import com.devtrack.devtrack_backend.exception.ProjectNotFoundException;
@@ -25,16 +27,18 @@ public class IssueService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final LabelRepository labelRepository;
+    private final IssueEventProducer issueEventProducer;
 
     public IssueService(
             IssueRepository issueRepository,
             ProjectRepository projectRepository,
-            UserRepository userRepository, LabelRepository labelRepository
+            UserRepository userRepository, LabelRepository labelRepository, IssueEventProducer issueEventProducer
     ) {
         this.issueRepository = issueRepository;
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.labelRepository = labelRepository;
+        this.issueEventProducer = issueEventProducer;
     }
 
     public List<IssueResponse> getAllIssues() {
@@ -112,6 +116,34 @@ public class IssueService {
         issue.setLabels(resolveLabels(request.getLabels()));
 
         Issue savedIssue = issueRepository.save(issue);
+
+        // Publish Kafka event
+        if (savedIssue.getAssignee() != null) {
+
+            IssueCreatedEvent event = new IssueCreatedEvent();
+
+            event.setIssueId(savedIssue.getId());
+            event.setIssueKey(savedIssue.getIssueKey());
+            event.setTitle(savedIssue.getTitle());
+
+            event.setAssigneeId(
+                    savedIssue.getAssignee().getId()
+            );
+
+            event.setAssigneeName(
+                    savedIssue.getAssignee().getName()
+            );
+
+            event.setAssigneeEmail(
+                    savedIssue.getAssignee().getEmail()
+            );
+
+            event.setProjectKey(
+                    savedIssue.getProject().getProjectKey()
+            );
+
+            issueEventProducer.publishIssueCreated(event);
+        }
 
         return mapToResponse(savedIssue);
     }

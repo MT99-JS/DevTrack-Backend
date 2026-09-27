@@ -111,3 +111,7 @@ jacoco.exec
 # =========================
 generated/
 uploads/
+
+# Certificates/private keys
+*.pem
+*.key
